@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ddnser
+description: DDNSer is a simple library for updating DNS records with your current public IP address.
+type: application
+version: 0.0.1
+appVersion: "0.0.1"

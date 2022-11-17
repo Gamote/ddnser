@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "helpers.fullName" . }}-job
+  labels:
+    {{- include "helpers.labels" . | nindent 4 }}
+spec:
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 60
+  schedule: {{ .Values.schedule | quote }}
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 240
+      backoffLimit: 3
+      template:
+        metadata:
+          name: {{ include "helpers.fullName" . }}-job-pod
+          labels:
+            {{- include "helpers.selectorLabels" . | nindent 12 }}
+        spec:
+          containers:
+            - name: {{ include "helpers.fullName" . }}-job-container
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              envFrom:
+                - secretRef:
+                    name: {{ include "helpers.fullName" . }}-secret
+          restartPolicy: OnFailure

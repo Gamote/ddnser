@@ -1,0 +1,8 @@
+image:
+  repository: gamote/ddnser
+  tag: "0.0.2"
+schedule: "*/5 * * * *"
+cloudflare:
+  apiToken: ""
+  dnsZoneName: ""
+  dnsRecordNames: ""
