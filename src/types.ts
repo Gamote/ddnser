@@ -1,4 +1,5 @@
 export type DDNodeConfig = {
+  schedule?: string;
   cloudflare: {
     apiBaseUrl?: string;
     apiToken: string;

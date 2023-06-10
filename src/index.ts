@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import axios, {AxiosInstance} from "axios";
 import {CloudflareRecord, CloudflareRecordsResult, CloudflareZoneResult, DDNodeConfig} from "./types";
+import {CronJob} from "cron";
 
 /**
  * Parse the .env file
@@ -13,6 +14,7 @@ dotenv.config();
  */
 const assertConfig = (): DDNodeConfig => {
   const config: DDNodeConfig = {
+    schedule: process.env.DDNSER_CRON_SCHEDULE,
     cloudflare: {
       apiBaseUrl: process.env.CLOUDFLARE_API_BASE_URL ?? "https://api.cloudflare.com/client/v4",
       apiToken: process.env.CLOUDFLARE_API_TOKEN as string,
@@ -35,6 +37,8 @@ const assertConfig = (): DDNodeConfig => {
 
   return config;
 }
+
+const config = assertConfig();
 
 /**
  * Get the Cloudflare zone id based on the zone name
@@ -71,11 +75,29 @@ const getCloudflareZoneRecords = async (client: AxiosInstance, zoneId: string): 
 }
 
 /**
+ * Get the schedule job if needed
+ */
+const getScheduleJob = async (): Promise<CronJob | null> => {
+  if (!config.schedule) {
+    return null;
+  }
+
+  return new CronJob(
+    config.schedule,
+    async () => {
+      console.log('DDNSer is running on schedule');
+      await main();
+    },
+    null,
+    true,
+    'America/Los_Angeles'
+  );
+}
+
+/**
  * Main method
  */
 const main = async () => {
-  const config = assertConfig();
-
   const client = axios.create({
     baseURL: config.cloudflare.apiBaseUrl,
     headers: {
@@ -95,7 +117,7 @@ const main = async () => {
   const zoneRecords = await getCloudflareZoneRecords(client, zoneId);
 
   // Get the A records that we want to update
-  console.log("Filtering zone records based on record names");
+  console.log(`Filtering zone records based on record names (Record names: ${config.cloudflare.dnsRecordNames.join(", ")})`);
   const matchedRecords = zoneRecords.reduce<CloudflareRecord[]>((matches, record) => {
     if (record.type === "A" && config.cloudflare.dnsRecordNames.includes(record.name)) {
       matches.push(record);
@@ -134,4 +156,14 @@ const main = async () => {
   await Promise.all(promises);
 }
 
-void main();
+/**
+ * Run the main method and start the schedule if needed
+ */
+void main().then(async () => {
+  const job = await getScheduleJob()
+
+  if (job) {
+    job.start();
+    console.log(`Run scheduled ("${config.schedule}")`);
+  }
+});
