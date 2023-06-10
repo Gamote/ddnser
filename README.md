@@ -29,8 +29,32 @@ docker build --platform linux/amd64 -t ${YOUR_REGISTRY}/ddnser:${YOUR_CURRENT_VE
 docker image push ${YOUR_REGISTRY}/ddnser:${YOUR_CURRENT_VERSION}
 
 # Example:
-# docker build --platform linux/arm64/v8 -t gamote/ddnser:0.0.1 .
-# docker image push gamote/ddnser:0.0.1
+# docker build --platform linux/arm64/v8 -t gamote/ddnser:0.0.4 .
+# docker image push gamote/ddnser:0.0.4
+```
+
+To build for multiple platforms, you need to enable experimental features in Docker.
+```bash
+docker buildx create --use
+
+# Build & push the image
+docker buildx build --platform linux/amd64,linux/arm64 --push -t ${YOUR_REGISTRY}/ddnser:${YOUR_CURRENT_VERSION} .
+
+# Example:
+docker buildx build --platform linux/amd64,linux/arm64 --push -t gamote/ddnser:0.0.4 .
+```
+
+## Running the Docker image
+
+```bash
+sudo docker run -d \
+  --restart=unless-stopped \
+  -e DDNSER_CRON_SCHEDULE="*/5 * * * *" \
+  -e CLOUDFLARE_API_TOKEN="YOUR_KEY" \
+  -e CLOUDFLARE_DNS_ZONE_NAME="domain.com" \
+  -e CLOUDFLARE_DNS_RECORD_NAMES="domain.com" \
+  --name=gamote_ddnser_cloudflare \
+  gamote/ddnser:0.0.4
 ```
 
 ## ✨Roadmap
